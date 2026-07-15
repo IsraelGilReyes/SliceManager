@@ -1,33 +1,47 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
-import mariadb from 'mariadb';
 
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
-  public client: PrismaClient;
+  public readonly client: PrismaClient;
 
   constructor() {
-    // Desglosamos los datos manualmente para que mariadb cree el pool sin romperse internamente
-    const pool = mariadb.createPool({
-      host: 'localhost',
-      port: 3306,
-      user: 'isra',
-      password: 'g23292034',
-      database: 'pizzeria_db',
-      connectionLimit: 5
+    const host = process.env.DATABASE_HOST;
+    const port = Number(process.env.DATABASE_PORT ?? 3306);
+    const user = process.env.DATABASE_USER;
+    const password = process.env.DATABASE_PASSWORD;
+    const database = process.env.DATABASE_NAME;
+
+    if (!host || !user || password === undefined || !database) {
+      throw new Error(
+        'Faltan variables de conexión a la base de datos en el archivo .env',
+      );
+    }
+
+    const adapter = new PrismaMariaDb({
+      host,
+      port,
+      user,
+      password,
+      database,
+      connectionLimit: 5,
     });
 
-    // Inicializamos el adaptador oficial pasando el pool
-    const adapter = new PrismaMariaDb(pool as any);
-
-    // Creamos la instancia inyectando el adaptador que exige tu prisma.config.ts
-    this.client = new PrismaClient({ adapter } as any);
+    this.client = new PrismaClient({ adapter });
   }
 
-  get user() { return this.client.user; }
-  get role() { return this.client.role; }
-  get product() { return this.client.product; }
+  get user() {
+    return this.client.user;
+  }
+
+  get role() {
+    return this.client.role;
+  }
+
+  get product() {
+    return this.client.product;
+  }
 
   async onModuleInit() {
     await this.client.$connect();

@@ -19,10 +19,23 @@ model User {
   name      String
   email     String   @unique
   password  String
-  isActive  Boolean  @default(true)
+  isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
   roleId    Int      @map("role_id")
-  role      Role     @relation(fields: [roleId], references: [id])
 
+  role Role @relation(fields: [roleId], references: [id])
+
+  @@index([roleId])
   @@map("users")
+}
+
+model Product {
+  id             Int      @id @default(autoincrement())
+  name           String   @unique
+  extraPriceFull Decimal  @default(0.00) @map("extra_price_full") @db.Decimal(10, 2)
+  extraPriceHalf Decimal  @default(0.00) @map("extra_price_half") @db.Decimal(10, 2)
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("products")
 }

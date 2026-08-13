@@ -3,44 +3,36 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-
-// Servicio encargado de comunicarse con la base de datos mediante Prisma
 import { PrismaService } from '../../prisma/prisma.service';
-
-// DTO utilizados para crear y actualizar roles
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 
-// Convierte esta clase en un servicio que NestJS puede inyectar
 @Injectable()
 export class RolesService {
-  // Inyectamos PrismaService para acceder a la base de datos
+  // Permite acceder al modelo Role mediante Prisma.
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Obtiene todos los roles registrados
+   * Obtiene todos los roles ordenados alfabéticamente.
    * GET /roles
    */
   async findAll() {
     return this.prisma.role.findMany({
       orderBy: {
-        // Ordena alfabéticamente por nombre
         name: 'asc',
       },
     });
   }
 
   /**
-   * Obtiene un rol por su ID
+   * Obtiene un rol por su ID.
    * GET /roles/:id
    */
   async findOne(id: number) {
-    // Busca un único registro mediante su llave primaria
     const role = await this.prisma.role.findUnique({
       where: { id },
     });
 
-    // Si no existe, responde con un error 404
     if (!role) {
       throw new NotFoundException(`El rol con ID ${id} no existe.`);
     }
@@ -49,39 +41,51 @@ export class RolesService {
   }
 
   /**
-   * Crea un nuevo rol
+   * Crea un nuevo rol.
    * POST /roles
    */
   async create(createRoleDto: CreateRoleDto) {
-    // Verificamos que no exista otro rol con el mismo nombre
-    const exists = await this.prisma.role.findUnique({
+    // Verifica que el nombre no esté registrado.
+    const existingRole = await this.prisma.role.findUnique({
       where: {
         name: createRoleDto.name,
       },
     });
 
-    // Si ya existe, respondemos con error 409
-    if (exists) {
+    if (existingRole) {
       throw new ConflictException(
         `Ya existe un rol con el nombre "${createRoleDto.name}".`,
       );
     }
 
-    // Si todo está correcto, insertamos el nuevo registro
     return this.prisma.role.create({
       data: createRoleDto,
     });
   }
 
   /**
-   * Actualiza un rol existente
+   * Actualiza un rol existente.
    * PATCH /roles/:id
    */
   async update(id: number, updateRoleDto: UpdateRoleDto) {
-    // Primero verificamos que el rol exista
+    // Primero comprueba que el rol exista.
     await this.findOne(id);
 
-    // Después actualizamos únicamente los campos enviados
+    // Si se cambia el nombre, comprueba que no pertenezca a otro rol.
+    if (updateRoleDto.name) {
+      const existingRole = await this.prisma.role.findUnique({
+        where: {
+          name: updateRoleDto.name,
+        },
+      });
+
+      if (existingRole && existingRole.id !== id) {
+        throw new ConflictException(
+          `Ya existe un rol con el nombre "${updateRoleDto.name}".`,
+        );
+      }
+    }
+
     return this.prisma.role.update({
       where: { id },
       data: updateRoleDto,
@@ -89,14 +93,13 @@ export class RolesService {
   }
 
   /**
-   * Elimina un rol
+   * Elimina físicamente un rol.
    * DELETE /roles/:id
    */
   async remove(id: number) {
-    // Validamos que exista antes de eliminarlo
+    // Comprueba que exista antes de eliminarlo.
     await this.findOne(id);
 
-    // Eliminación física del registro
     return this.prisma.role.delete({
       where: { id },
     });

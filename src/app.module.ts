@@ -5,16 +5,20 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { ProductsModule } from './modules/products/products.module';
+import { RolesModule } from './modules/roles/roles.module';
 
 @Module({
   imports: [
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    // Carga las variables del archivo .env en toda la aplicación.
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
     }),
+
+    // Módulos del proyecto.
     AuthModule,
     ProductsModule,
+    RolesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

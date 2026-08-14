@@ -6,27 +6,33 @@ import * as bcrypt from 'bcrypt';
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
-    private jwtService: JwtService,
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
   ) {}
 
   async login(email: string, pass: string) {
-    // 1. Buscar al usuario en MySQL incluyendo su rol
     const user = await this.prisma.client.user.findUnique({
       where: { email },
       include: { role: true },
     });
 
-    // 2. Verificar si el usuario existe y si la contraseña coincide
     if (!user || !(await bcrypt.compare(pass, user.password))) {
       throw new UnauthorizedException('Credenciales incorrectas');
     }
 
-    // 3. Crear el payload del JWT con sus datos y su rol (Cajero, Gerente, etc.)
-    const payload = { email: user.email, sub: user.id, role: user.role.name };
+    const payload = {
+      email: user.email,
+      sub: user.id,
+      role: user.role.name,
+    };
 
-    // 4. Firmar y retornar el token de acceso
     return {
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role.name,
+      },
       access_token: this.jwtService.sign(payload),
     };
   }

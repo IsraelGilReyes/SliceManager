@@ -9,12 +9,14 @@ import { UpdateRoleDto } from './dto/update-role.dto';
 
 @Injectable()
 export class RolesService {
-  // Permite acceder al modelo Role mediante Prisma.
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Obtiene todos los roles ordenados alfabéticamente.
-   * GET /roles
+   * Obtiene todos los roles registrados en el sistema.
+   *
+   * Los roles se devuelven ordenados alfabéticamente por nombre.
+   *
+   * @returns Lista de roles registrados.
    */
   async findAll() {
     return this.prisma.role.findMany({
@@ -25,8 +27,11 @@ export class RolesService {
   }
 
   /**
-   * Obtiene un rol por su ID.
-   * GET /roles/:id
+   * Busca un rol mediante su identificador.
+   *
+   * @param id Identificador único del rol.
+   * @returns El rol encontrado.
+   * @throws NotFoundException Si no existe un rol con el ID proporcionado.
    */
   async findOne(id: number) {
     const role = await this.prisma.role.findUnique({
@@ -41,11 +46,16 @@ export class RolesService {
   }
 
   /**
-   * Crea un nuevo rol.
-   * POST /roles
+   * Crea un nuevo rol en el sistema.
+   *
+   * Antes de crear el registro, verifica que no exista otro rol
+   * con el mismo nombre.
+   *
+   * @param createRoleDto Datos necesarios para crear el rol.
+   * @returns El rol creado.
+   * @throws ConflictException Si ya existe un rol con el mismo nombre.
    */
   async create(createRoleDto: CreateRoleDto) {
-    // Verifica que el nombre no esté registrado.
     const existingRole = await this.prisma.role.findUnique({
       where: {
         name: createRoleDto.name,
@@ -64,14 +74,20 @@ export class RolesService {
   }
 
   /**
-   * Actualiza un rol existente.
-   * PATCH /roles/:id
+   * Actualiza los datos de un rol existente.
+   *
+   * Primero verifica que el rol exista y, si se modifica el nombre,
+   * comprueba que dicho nombre no pertenezca a otro rol.
+   *
+   * @param id Identificador único del rol que se desea actualizar.
+   * @param updateRoleDto Datos que se desean modificar.
+   * @returns El rol actualizado.
+   * @throws NotFoundException Si el rol no existe.
+   * @throws ConflictException Si el nuevo nombre ya pertenece a otro rol.
    */
   async update(id: number, updateRoleDto: UpdateRoleDto) {
-    // Primero comprueba que el rol exista.
     await this.findOne(id);
 
-    // Si se cambia el nombre, comprueba que no pertenezca a otro rol.
     if (updateRoleDto.name) {
       const existingRole = await this.prisma.role.findUnique({
         where: {
@@ -93,11 +109,15 @@ export class RolesService {
   }
 
   /**
-   * Elimina físicamente un rol.
-   * DELETE /roles/:id
+   * Elimina físicamente un rol del sistema.
+   *
+   * Antes de eliminarlo, verifica que el rol exista.
+   *
+   * @param id Identificador único del rol que se desea eliminar.
+   * @returns El rol eliminado.
+   * @throws NotFoundException Si el rol no existe.
    */
   async remove(id: number) {
-    // Comprueba que exista antes de eliminarlo.
     await this.findOne(id);
 
     return this.prisma.role.delete({

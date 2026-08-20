@@ -9,78 +9,132 @@ import {
   Post,
 } from '@nestjs/common';
 
-// DTO utilizados para crear y actualizar
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
-
-// Servicio donde se encuentra la lógica del negocio
+import { RoleEntity } from './entities/role.entity';
 import { RolesService } from './roles.service';
 
-// Todas las rutas comienzan con /roles
+@ApiTags('Roles')
+@ApiBearerAuth()
 @Controller('roles')
 export class RolesController {
-  // Inyección del servicio
   constructor(private readonly rolesService: RolesService) {}
 
-  /**
-   * Obtiene todos los roles
-   * GET /roles
-   */
   @Get()
+  @ApiOperation({
+    summary: 'Obtener todos los roles',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de roles obtenida correctamente',
+    type: [RoleEntity],
+  })
   findAll() {
     return this.rolesService.findAll();
   }
 
-  /**
-   * Obtiene un rol por ID
-   * GET /roles/:id
-   */
   @Get(':id')
-  findOne(
-    // ParseIntPipe convierte automáticamente el parámetro a número
-    @Param('id', ParseIntPipe)
-    id: number,
-  ) {
+  @ApiOperation({
+    summary: 'Obtener un rol por ID',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador del rol',
+    example: 1,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Rol encontrado correctamente',
+    type: RoleEntity,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'El rol no existe',
+  })
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.rolesService.findOne(id);
   }
 
-  /**
-   * Crea un nuevo rol
-   * POST /roles
-   */
   @Post()
-  create(
-    // Recibe el cuerpo de la petición y lo valida con CreateRoleDto
-    @Body()
-    createRoleDto: CreateRoleDto,
-  ) {
+  @ApiOperation({
+    summary: 'Crear un nuevo rol',
+  })
+  @ApiBody({
+    type: CreateRoleDto,
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Rol creado correctamente',
+    type: RoleEntity,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Ya existe un rol con ese nombre',
+  })
+  create(@Body() createRoleDto: CreateRoleDto) {
     return this.rolesService.create(createRoleDto);
   }
 
-  /**
-   * Actualiza un rol existente
-   * PATCH /roles/:id
-   */
   @Patch(':id')
+  @ApiOperation({
+    summary: 'Actualizar un rol existente',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador del rol',
+    example: 1,
+  })
+  @ApiBody({
+    type: UpdateRoleDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Rol actualizado correctamente',
+    type: RoleEntity,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'El rol no existe',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Ya existe un rol con ese nombre',
+  })
   update(
-    @Param('id', ParseIntPipe)
-    id: number,
-
-    @Body()
-    updateRoleDto: UpdateRoleDto,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateRoleDto: UpdateRoleDto,
   ) {
     return this.rolesService.update(id, updateRoleDto);
   }
 
-  /**
-   * Elimina un rol
-   * DELETE /roles/:id
-   */
   @Delete(':id')
-  remove(
-    @Param('id', ParseIntPipe)
-    id: number,
-  ) {
+  @ApiOperation({
+    summary: 'Eliminar un rol',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador del rol',
+    example: 1,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Rol eliminado correctamente',
+    type: RoleEntity,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'El rol no existe',
+  })
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.rolesService.remove(id);
   }
 }
